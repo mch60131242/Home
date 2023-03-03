@@ -1,0 +1,6 @@
+git init
+
+git add [내가 원하는 파일]
+git commit -m '[내가 남기고 싶은 글]
+git remote add [내가 원하는 이름 (ex origin)] [주소]
+git push -u [이름] master(or main)
