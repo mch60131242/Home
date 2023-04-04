@@ -1,0 +1,192 @@
+-- 경북과 경기에 사는 사용자의 아이디, 이름, 주소를 출력
+select userid, name, addr
+from usertbl
+where addr = '경북'  or addr = '경기';
+
+-- sql 비교연산자 IN 으로 변경
+select userid, name, addr
+from usertbl
+where addr in ('경북', '경기');
+
+--  성이 조씨인 사용자의 이름을 출력
+select name from usertbl
+where name like '조%';
+
+-- employees db 에서 사원의 성에 'il'이 입력된 사원의 first_name 출력
+select first_name from employees.employees
+where first_name like '%li_%';
+
+-- 경남에 사는 사람의 키보다 큰 키를 가진 사용자의 이름, 키를 출력
+select name, height
+from usertbl
+where height > ( 경남에 사는 사람의 키 )
+select name, height
+from usertbl
+where height > ( select height from usertbl
+                        where addr = ' 경남')
+
+
+-- subquery의 결과가 여러 행일때
+-- > ANY, > ALL, IN
+select name, height 키
+from usertbl
+where height >= ALL( select height from usertbl
+                        where addr = '경남')
+
+--  정렬해서 결과를 보고자 할 경우  
+select name, height 키
+from usertbl
+where height >= ALL( select height from usertbl
+                        where addr = '경남')
+order by 키, name desc;
+
+-- select   구문에서 사용하는 alias 는 order by  구문에서만 사용 가능
+
+--  중복을 제거하고 하나만 출력
+select distinct addr from usertbl;
+
+--  employees의 dept_emp 에서 부서의 종류를 출력 
+select distinct dept_no from employees.dept_emp;
+
+-- 기존 자료로 새로운 테이블 생성
+create table new_user ( select userid, name, addr from usertbl );
+select * from new_user;
+
+--   기존 테이블의 구조(컬럼)는 복사하고 자료는 없는 테이블을 생성
+create table new_tb ( select * from usertbl where 1 = 2 );
+
+-- 사용자별 구매 총개수를 구함
+-- userid, 구매총금액
+select userid, sum(price * amount)
+from buytbl
+group by userid
+with rollup;
+
+-- groupname 별로 구매 총금액 
+select num, groupname, sum(amount * price) " 구매 총금액"
+from buytbl
+group by groupName, num
+with rollup;  --  소계 및 총합을 추가로 출력
+
+-- select 구문 정리
+select
+from
+where
+group by  -- with rollup
+having
+order by asc, desc --  컬럼명, 알리아스명, 숫자 
+
+-- DML & DDL
+create table testtbl (
+id int,
+username char(10), 
+age int);
+-- data  삽입
+insert into testtbl (id, username) values (1, '홍길동');
+select * from testtbl;
+insert into testtbl values(2,'김철수',30);
+
+-- 자동으로 증가하는 auto_increment 
+create table testtbl2(
+id int auto_increment primary key,
+username char(10),
+age int);
+insert into testtbl2 (username,age) values('김철수',30);
+insert into testtbl2  values(NULL, '김철수',30);
+select * from testtbl2;
+select last_insert_id(); -- 마지막에 입력된 숫자 출력
+
+create table testtbl3(
+id int auto_increment primary key,
+username char(10),
+age int);
+insert into testtbl3  values(NULL, '홍길동',30);
+select * from testtbl3;
+select last_insert_id();
+
+insert into testtbl2  values(NULL, '김철수',30);
+select * from testtbl2;
+select last_insert_id();
+-- 숫자를 100부터 다시 시작하고자 할 경우
+alter table testtbl2 auto_increment = 100;
+insert into testtbl2  values(NULL, '김철수',30);  -- 100부터 시작 
+select * from testtbl2;
+
+-- 시작번호를 1000으로 시작하고 3씩 증가시키면서 auto_increment 실행
+create table testtbl4(
+id int auto_increment primary key,
+username char(10),
+age int);
+alter table testtbl4 auto_increment = 1000;
+set @@auto_increment_increment = 3;
+insert into testtbl4  values(NULL, '정연',30); 
+insert into testtbl4  values(NULL, '나연',30);
+insert into testtbl4  values(NULL, '모모',30);
+
+-- 다른 테이블에서 자료를 가져와서 삽입
+alter table testtbl modify  username varchar(50);
+insert into testtbl select emp_no, first_name, 10 
+	           from employees.employees;
+select count(*) from testtbl;
+
+-- 대량의 샘플 데이터를 가진 테이블 생성
+create table sampletbl 
+as select emp_no id , first_name fname, last_name lname from employees.employees;
+select count(*) from sampletbl;
+
+-- update 테이블명 set 컬럼명=값, .. where  조건식;
+update sampletbl set lname='없음' where Fname like 'K%';
+select * from sampletbl where Fname like 'K%';
+
+select * from buytbl;
+-- price를 150% 인상
+update buytbl set price = price * 1.5;
+select * from buytbl;
+
+-- buytbl 에서 groupname 의 값이 null인 자료 검색
+select * from buytbl where groupname = null;  -- 연산식에 null이 포함되면 null반환
+select * from buytbl where groupname is null;
+select * from buytbl where groupname is not null;
+
+-- rollback, truncate, drop
+set autocommit=0;
+
+delete from sampletbl;
+select * from sampletbl;
+rollback;
+select * from sampletbl;  -- rollback 된 상태
+select count(*) from sampletbl;
+delete from sampletbl limit 1000;
+select count(*) from sampletbl;
+
+truncate table testtbl2;  -- rollback 되지 않음
+select * from testtbl2;
+rollback;
+select * from testtbl2;
+
+-- mysql 의 내장함수 
+-- ifnull(컬럼, 출력값) --> 컬럼의 값이 존재하면 컬럼의 값을, 아니면 출력값을
+select ifnull(groupname, '분류없음') "분류"
+from buytbl;
+
+-- if(식, 참, 거짓) -->  식의 결과가 참이면 참을, 거짓이면 거짓을 출력
+select if(100 > 200, '참', '거짓'); --  if(식, 참, 거짓)
+
+-- nullif(  식1, 식2 ) -->   두 식의 결과가 같으면  NULL  반환, 아니면  식1의 값 반환
+select nullif(100, 100), nullif(200,100); 
+
+-- case  컬럼 when  값1  then  출력1  when  값2  then  출력2 ... else  출력n end
+select case '이십' when 1 then '일'
+	          when 5 then '오'
+	          when 10 then '십'
+                       else '오류'
+         end "case 모델";
+
+
+
+
+
+
+
+
+
